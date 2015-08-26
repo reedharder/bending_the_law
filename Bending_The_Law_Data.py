@@ -10,6 +10,10 @@ import pickle
 self={}
 
 
+
+
+
+
 def load_data(data_dir):
 	judicial = pd.read_csv(data_dir + 'judicial.csv')
 	allcites = pd.read_csv(data_dir + 'allcites.txt',sep = ' ',names=np.array(['citation','contains']))
@@ -18,6 +22,7 @@ def load_data(data_dir):
 	Docs_We_Have2 = judicial.usid_nice[judicial.usid_nice.isin(Docs_We_Have)]
 	phi = pd.read_csv(data_dir + 'fit-US-flattened-yearprefix-split-munich-phi.csv',index_col = 0)
 	theta = pd.read_csv(data_dir + 'fit-US-flattened-yearprefix-split-munich-theta-merged.csv',index_col = 0)
+      
 	Docs_In_Comp_Data = np.array(theta.index)
 	Dict0 = {}
 	Dict0['usid'] = Docs_In_Comp_Data

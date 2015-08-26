@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 import random as rd
 import csv
-import xlwt
+#import xlwt
 import openpyxl
-import scipy as sp
-from matplotlib.pyplot import *
-import matplotlib.pyplot as plt
+#import scipy as sp
+#from matplotlib.pyplot import *
+#import matplotlib.pyplot as plt
 # import matplotlib.pyplot as pyplot
 import time
 import itertools
@@ -17,13 +17,14 @@ self={}
 
 
 
-data_dir='/Users/gregoryleibon/Citation_Network/Data/'
+data_dir='C:/users/reed/desktop/rockmore15x/Initial_Data_For_Reed/'
 
 	
 def normalize(A,N):
 	"""
 	This is a simple normalizer... that leaves zero uneffected
 	"""
+     
 	RowSum=np.dot(A,np.ones([N,1]))	
 	V=RowSum.reshape([np.size(RowSum),])
 	W=1/V
@@ -62,8 +63,8 @@ def find_words(phi,Topic,Top_N=5,View=False):
 		Words=np.array(phi.columns)
 		Words[Dist>0.01]
 		Ind=np.argsort(-Dist)
-		print Words[Ind[0:Top_N]].tolist()
-		print (np.round(10000*Dist[Ind[0:Top_N]])/100).tolist()
+		print(Words[Ind[0:Top_N]].tolist())
+		print((np.round(10000*Dist[Ind[0:Top_N]])/100).tolist())
 	return Dist
 
 def find_topics(theta,phi,Doc,Top_N=5,View=False): 
@@ -74,7 +75,7 @@ def find_topics(theta,phi,Doc,Top_N=5,View=False):
 		Ind=np.argsort(-Dist)
 		for k in np.arange(0,Top_N,1):
 			Topic=Topics[Ind[k]]
-			print 'Topic:'+ Topic + ' (Prob:' + str((np.round(10000*Dist[Ind[k]])/100).tolist()) + ')'
+			print( 'Topic:'+ Topic + ' (Prob:' + str((np.round(10000*Dist[Ind[k]])/100).tolist()) + ')')
 			find_words(phi,Topic,5,View)
 	return Dist
 
@@ -117,114 +118,159 @@ def kl_div(X):
 
 def js_div(X):
 	return 0.5*(kl_div(X)+kl_div(X).T)
-
+ 
+def get_title_to_usid():
+    #read in metadata for each case
+    judicial = pd.read_csv(data_dir+ 'judicial.csv')
+     #read in citations for cases
+    allcites = pd.read_csv(data_dir+ 'allcites.txt',sep=' ',names=np.array(['citation','contains'])).dropna()
+     # this is the id in the title 
+    judicial['usid_nice']=judicial.usid.str.replace('US','_US_') + '.txt'
+     #list of case files in our directory
+    Docs_We_Have=os.listdir(data_dir + "original_citations_from_folder1t8")	
+     #overlapping set of files in metadata and folder
+    Docs_We_Have2=judicial.usid_nice[judicial.usid_nice.isin(Docs_We_Have)]
+    titles = []
+    for doc in Docs_We_Have2:
+        with open(data_dir+ 'original_citations_from_folder1t8/' +doc,'r') as infile:
+            for line in infile:
+                if line.strip():
+                    title = line
+                    break
+            titles.append(title.strip())
+    df = pd.DataFrame(Docs_We_Have2)
+    df['title']=titles
+    df['usid'] = df.apply(lambda row: row['usid_nice'].split('.')[0],1)
+    os.chdir(data_dir)
+    df.to_csv('case_titles.csv')
 def load_data():
-	judicial = pd.read_csv(data_dir+ 'judicial.csv')
-	allcites = pd.read_csv(data_dir+ 'allcites.txt',sep=' ',names=np.array(['citation','contains']))
-	len(np.unique(allcites['citation']))
-	len(judicial.caseid)
-	#  is the id to read in
-	TF=allcites['citation'].isin(judicial.caseid) 
-	np.sum(TF==False)
-	# this is the id in the title 
-	len(judicial.usid)
-	judicial['usid_nice']=judicial.usid.str.replace('US','_US_') + '.txt'
-	k=4100
-	name_cite=judicial.usid_nice.tolist()[k] 
-	print name_cite
-	ffile='original_citations_from_file1t4'
-	ffolder='original_citations_from_folder1t8'
-	file0=data_dir + ffile + '/' +name_cite 
-	# file0='/Users/gregoryleibon/Citation_Network/Data/original_citations_from_file1t4/153_US_39.txt'
-	'''
-	with open (file0, "r") as myfile:
-	    example_file=myfile.read().replace('\n', '')
-	import os
-	L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/original_citations_from_file1t4")
-	len(L)
-	import os
-	L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/original_citations_from_folder1t8")
-	len(L)
-	np.sum(judicial.usid_nice.isin(L))
-	import os
-	L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/Allen_update")
-	len(L)
-	'''
-	Docs_We_Have=os.listdir("/Users/gregoryleibon/Citation_Network/Data/original_citations_from_folder1t8")
-	len(Docs_We_Have)
-	np.sum(judicial.usid_nice.isin(Docs_We_Have))
-	Docs_We_Have2=judicial.usid_nice[judicial.usid_nice.isin(Docs_We_Have)]
+    #read in metadata for each case
+    judicial = pd.read_csv(data_dir+ 'judicial.csv')
+     #read in citations for cases
+    allcites = pd.read_csv(data_dir+ 'allcites.txt',sep=' ',names=np.array(['citation','contains'])).dropna()
+     # this is the id in the title 
+    judicial['usid_nice']=judicial.usid.str.replace('US','_US_') + '.txt'
+	
+    '''# file0='/Users/gregoryleibon/Citation_Network/Data/original_citations_from_file1t4/153_US_39.txt'
+    k=4100
+    name_cite=judicial.usid_nice.tolist()[k] 
+    print(name_cite)
+    ffile='original_citations_from_file1t4'
+    ffolder='original_citations_from_folder1t8'
+    file0=data_dir + ffile + '/' +name_cite 
+    with open (file0, "r") as myfile:
+    example_file=myfile.read().replace('\n', '')
+    import os
+    L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/original_citations_from_file1t4")
+    len(L)
+    import os
+    L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/original_citations_from_folder1t8")
+    len(L)
+    np.sum(judicial.usid_nice.isin(L))
+    import os
+    L=os.listdir("/Users/gregoryleibon/Citation_Network/Data/Allen_update")
+    len(L)
+    '''
+     #list of case files in our directory
+    Docs_We_Have=os.listdir(data_dir + "original_citations_from_folder1t8")	
+     #overlapping set of files in metadata and folder
+    Docs_We_Have2=judicial.usid_nice[judicial.usid_nice.isin(Docs_We_Have)]
 	# header word distrobution over topic
 	# topic distribution of 
 	# new post 1946-ish latest and greatest 
 	# ~ 7 thousand   
 	# Headers 
-	phi = pd.read_csv(data_dir+ 'fit-US-flattened-yearprefix-split-munich-phi.csv',index_col=0)
-	theta = pd.read_csv(data_dir+ 'fit-US-flattened-yearprefix-split-munich-theta-merged.csv',index_col=0)
-	Docs_In_Comp_Data=np.array(theta.index)
-	Dict0={}
-	Dict0['usid']=Docs_In_Comp_Data
-	Dict0['usid_nice']=Docs_In_Comp_Data+'.txt'
-	Docs_In_Comp_Data=pd.DataFrame(Dict0)
-	Docs_We_Have3 = Docs_In_Comp_Data.usid_nice[Docs_In_Comp_Data.usid_nice.isin(Docs_We_Have2)]
-	Our_Docs= judicial[judicial.usid_nice.isin(Docs_We_Have3)]
-	Our_Docs=Our_Docs.sort_index(by='year',ascending=False)
-	Our_Docs['usid_index']=Our_Docs.usid_nice.str.replace('.txt','')
-	theta=theta.join(Our_Docs[['usid_index','usid']].set_index('usid_index'))
-	Our_theta=theta[theta.usid.isnull()==False]
-	del Our_theta['usid']
-	# restict by topic 
-	A=np.array(Our_theta)
-	np.mean(A>0.001) 
-	# simple get it down to good topics (45) .... 
-	Our_Docs=Our_Docs.set_index('usid')
-	# Let's rid via restricted citations 
-	# then rid the smallest topics 
-	# let ud keep the Topic percent 
-	Our_Cites=allcites[(allcites.citation.isin(Our_Docs.caseid)) & (allcites.contains.isin(Our_Docs.caseid))]	
-	Our_Cites['temp']=1
-	G=Our_Cites.groupby(['citation'])['temp'].sum() 
-	G.name='count_contains'
-	G=pd.DataFrame(G)
-	Our_Docs=Our_Docs.join(G,on='caseid')
-	Our_Cites['temp']=1
-	G=Our_Cites.groupby(['contains'])['temp'].sum() 
-	G.name='count_citations'
-	G=pd.DataFrame(G)
-	Our_Docs=Our_Docs.join(G,on='caseid')
-	# connect symmetrically!
-	del Our_Cites['temp']
-	Our_Cites_Sym= pd.concat([Our_Cites.rename(columns={'citation':'case1','contains':'case2'}),Our_Cites.rename(columns={'citation':'case2','contains':'case1'})])
-	Our_Cites_Sym=Our_Cites_Sym.drop_duplicates(['case1','case2'])
-	# Our_Cites_Sym=Our_Cites_Sym.join(J,on='caseid')
-	Our_Cites_Sym['temp']=1
-	G=Our_Cites_Sym.groupby(['case1'])['temp'].sum() 
-	G.name='count_connectionsA'
-	G=pd.DataFrame(G)
-	Our_Docs=Our_Docs.join(G,on='caseid')
-	Our_Docs['count_connectionsA'][Our_Docs['count_connectionsA'].isnull()]=0
-	Our_Cites_Sym['temp']=1
-	G=Our_Cites_Sym.groupby(['case2'])['temp'].sum() 
-	G.name='count_connectionsB'
-	G=pd.DataFrame(G)
-	Our_Docs=Our_Docs.join(G,on='caseid')
-	Our_Docs['count_connectionsB'][Our_Docs['count_connectionsB'].isnull()]=0
-	Our_Docs['count_connections']=Our_Docs['count_connectionsA']+Our_Docs['count_connectionsB']
-	hist(np.array(Our_Docs['count_connections'])) 
-	return [Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym]
+    phi = pd.read_csv(data_dir+ 'fit-US-flattened-yearprefix-split-munich-phi.csv',index_col=0)
+     #topic distribution over case
+    theta = pd.read_csv(data_dir+ 'fit-US-flattened-yearprefix-split-munich-theta.csv',index_col=0)
+    theta['fullid']=theta.index
+    theta_index=theta.index
+    theta['usid'] = theta.apply(lambda row: '_'.join(row['fullid'].split('_')[-1].split('.')[:3]),1)
+    theta = theta.reset_index().drop('fullid',1).drop('index',1)
+    theta_m = theta.groupby('usid').aggregate(np.mean)      
+     #list of doc titles in theta
+    Docs_In_Comp_Data=np.array(theta_m.index)
+    #create data frame with these theta titles plus associated file names
+    Dict0={}
+    Dict0['usid']=Docs_In_Comp_Data
+    Dict0['usid_nice']=Docs_In_Comp_Data+'.txt'
+    Docs_In_Comp_Data=pd.DataFrame(Dict0)
+    #get overlap between theta titles and earlier titles
+    Docs_We_Have3 = Docs_In_Comp_Data.usid_nice[Docs_In_Comp_Data.usid_nice.isin(Docs_We_Have2)]
+    #relevant set of metadata
+    Our_Docs= judicial[judicial.usid_nice.isin(Docs_We_Have3)]
+    #sort metadata by year
+    Our_Docs=Our_Docs.sort_index(by='year',ascending=False)
+    #create simple index title from mfile name for metadata
+    Our_Docs['usid_index']=Our_Docs.usid_nice.str.replace('.txt','')
+    #give theta these indices
+    theta_m=theta_m.join(Our_Docs[['usid_index','usid']].set_index('usid_index'))
+    #take all non null titles
+    Our_theta=theta_m[theta_m.usid.isnull()==False]
+    #remove this index
+    del Our_theta['usid']
+    # restict by topic 
+    ##A=np.array(Our_theta)
+    ##np.mean(A>0.001) 
+    # simple get it down to good topics (45) .... 
+    Our_Docs=Our_Docs.set_index('usid')
+    # Let's rid via restricted citations 
+    # then rid the smallest topics 
+    # let ud keep the Topic percent 
+    #topics both citing and cited in current set of Docs
+    Our_Cites=allcites[(allcites.citation.isin(Our_Docs.caseid)) & (allcites.contains.isin(Our_Docs.caseid))]	
+    Our_Cites['temp']=1
+    #number of cites in this doc, CHECK
+    G=Our_Cites.groupby(['citation'])['temp'].sum() 
+    G.name='count_contains'
+    G=pd.DataFrame(G)
+    #add this count to metadata
+    Our_Docs=Our_Docs.join(G,on='caseid')
+    #number of times this doc is cited, CHECK
+    Our_Cites['temp']=1
+    G=Our_Cites.groupby(['contains'])['temp'].sum() 
+    G.name='count_citations'
+    G=pd.DataFrame(G)
+    Our_Docs=Our_Docs.join(G,on='caseid')
+    # connect symmetrically! (Consider both directions)
+    del Our_Cites['temp']
+    Our_Cites_Sym= pd.concat([Our_Cites.rename(columns={'citation':'case1','contains':'case2'}),Our_Cites.rename(columns={'citation':'case2','contains':'case1'})])
+    Our_Cites_Sym=Our_Cites_Sym.drop_duplicates(['case1','case2'])
+    # Our_Cites_Sym=Our_Cites_Sym.join(J,on='caseid')
+    #count connections in both directions ) and add to metadata table
+    Our_Cites_Sym['temp']=1
+    G=Our_Cites_Sym.groupby(['case1'])['temp'].sum() 
+    G.name='count_connectionsA'
+    G=pd.DataFrame(G)
+    Our_Docs=Our_Docs.join(G,on='caseid')
+    Our_Docs['count_connectionsA'][Our_Docs['count_connectionsA'].isnull()]=0
+    Our_Cites_Sym['temp']=1
+    G=Our_Cites_Sym.groupby(['case2'])['temp'].sum() 
+    G.name='count_connectionsB'
+    G=pd.DataFrame(G)
+    Our_Docs=Our_Docs.join(G,on='caseid')
+    Our_Docs['count_connectionsB'][Our_Docs['count_connectionsB'].isnull()]=0
+    Our_Docs['count_connections']=Our_Docs['count_connectionsA']+Our_Docs['count_connectionsB']
+    ##hist(np.array(Our_Docs['count_connections'])) 
+    return [Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym]
 
 def create_cite_transition(Our_Docs,Our_Cites): 
 	# well if I'm keeping them all 
 	N= len(Our_Docs) 
+     
 	W_cited  = Our_Cites.copy()
+         #connect trans mat index based on 'citation', i.e. doc doing the citing
 	W_cited = join_replace(W_cited,Our_Docs[['caseid','tran_mat_index']],'citation','caseid') 
 	W_cited = W_cited.rename(columns={'tran_mat_index':'tran_mat_index_from'})
+         #do same for doc being cited
 	W_cited = join_replace(W_cited,Our_Docs[['caseid','tran_mat_index']],'contains','caseid') 
 	W_cited = W_cited.rename(columns={'tran_mat_index':'tran_mat_index_to'})
+         #transition matrix for each document citing all other documents
 	W_cited['weight']=1
 	T_cited = np.zeros([N,N])
 	T_cited[W_cited.tran_mat_index_from.astype(int),W_cited.tran_mat_index_to.astype(int)] = W_cited.weight
 	T_cited = normalize(T_cited,N)
+ #contruct transition matrix for each document being cited by other documents
 	W_cited_by  = Our_Cites.copy()
 	W_cited_by = join_replace(W_cited_by,Our_Docs[['caseid','tran_mat_index']],'citation','caseid') 
 	W_cited_by = W_cited_by.rename(columns={'tran_mat_index':'tran_mat_index_to'})
@@ -244,7 +290,7 @@ def create_sim_matrix(M_T,M_C,Our_Docs,Our_theta):
 	Here=0
 	for case0 in Our_theta.index:
 		Here=Here+1
-		print str(Here) + " out of " + str(len(Our_theta)) 
+		print(str(Here) + " out of " + str(len(Our_theta)))
 		#case0 = Our_theta.index.tolist()[0]
 		C = np.array(Our_theta[Our_theta.index==case0])[0]
 		AS = np.argsort(-C)
@@ -280,8 +326,8 @@ def acurate_resolvent(T,r):
 def form_resolvent(T,r):
 	Eye = np.eye(len(T))
 	R = np.linalg.solve(Eye-r*T,Eye)
-	Curvature  = np.log(np.diag(R -1))
-	return [R, Curvature]
+	#Curvature  = np.log(np.diag(R -1))
+	return R
 
 def partial_resolvent(T,r,Top):
 	Tnow=T
@@ -293,7 +339,7 @@ def partial_resolvent(T,r,Top):
 		rnow=rnow*r
 		T0 = np.dot(T,Tnow)
 		R= R + rnow*T0
-		print str(time.time()-t0)
+		print(str(time.time()-t0))
 	Rnorm = ((1-r)/(1-r**(Top+1)))*R 
 	return Rnorm 
 
@@ -309,28 +355,45 @@ def compute_page_dist(R_norm):
 			Dist_mat = Dist_k.reshape([1,len(V)])
 		else:
 			Dist_mat = np.concatenate([Dist_mat,Dist_k.reshape([1,len(V)])])
-		print str(k) + " out of " + str(len(R_norm))
-		print "current size " + str(Dist_mat.shape) 
+		print(str(k) + " out of " + str(len(R_norm)))
+		print("current size " + str(Dist_mat.shape) )
 	return Dist_mat
 
 def compute_page_dist_one_step(R_all,p): 
 	# take as step distribution  avoid crazy impact of point
 	N=len(R_all) 
 	R_1 =  R_all-np.eye(N)
-	for k in np.arange(0,len(R_1),1):
+ 
+	for k in range(0,N):#np.arange(0,len(R_1),1):
 		t0=time.time()
 		V = R_1[k,:]
-		np.sum(V) 
-		Tile_V = tile(V.reshape([1,len(V)]),[len(V),1])
-		Tile_V.shape 
+		#np.sum(V) 
+		Tile_V = tile(V.reshape([1,N]),[N,1])
+		#Tile_V.shape 
 		Dist_k = (np.sum(abs(R_1 - Tile_V)**p,1))**(1/(1.0*p))
 		if k == 0:
 			Dist_mat = Dist_k.reshape([1,len(V)])
 		else:
 			Dist_mat = np.concatenate([Dist_mat,Dist_k.reshape([1,len(V)])])
-		print str(k) + " out of " + str(len(R_1))
-		print "current size " + str(Dist_mat.shape) 
+             t1=time.time() - t0
+		print(str(k) + " out of " + str(len(R_1)))
+		print("current size " + str(Dist_mat.shape) )
 	return Dist_mat
+ 
+def compute_page_dist_one_step_l2(R_all): 
+	# take as step distribution  avoid crazy impact of point
+    t0=time.time()
+    N=len(R_all) 
+    R_1 =  R_all-np.eye(N)
+    Dist_mat = np.zeros([N,N])
+    for k in range(0,N):#np.arange(0,len(R_1),1):
+        Tile_V = tile(R_1[k,:],[N,1])          
+        t1=time.time() - t0
+        Dist_mat[k,:] = np.linalg.norm(R_1 - Tile_V,2,1)
+        print(k)
+    t1=time.time() - t0
+    return Dist_mat
+
 
 def hist_Page_Dist(fig_num, Page_Dist): 
 	close(fig_num)
@@ -428,11 +491,11 @@ def puddles_drainage_over_time(Drain_Pud_Info, T_all, Page_Dist, Our_Docs):
 		for impact_key_pertile in impact_key_pertile_list:
 			Impact_Data = puddling_on_date_fixed_impact(impact_key_pertile, Drain_Pud_Info, Page_Dist, Bending )
 			PIm2GIm1[str(date0)].append(100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['Impact1'])))/(1.0*len(Impact_Data['Impact1'])))
-			print 'Date:' + str(date0) + ', Predict Impact:' + str(PIm2GIm1[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile)
+			print('Date:' + str(date0) + ', Predict Impact:' + str(PIm2GIm1[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile))
 			PIm2GIm1D[str(date0)].append(100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1D'])))/(1.0*len(Impact_Data['I1D'])))
-			print 'Date:' + str(date0) + ', Predict Impact Darinage:' + str(PIm2GIm1D[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile)
+			print('Date:' + str(date0) + ', Predict Impact Darinage:' + str(PIm2GIm1D[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile))
 			PIm2GIm1P[str(date0)].append(100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1P'])))/(1.0*len(Impact_Data['I1P'])))
-			print 'Date:' + str(date0) + ', Predict Impact Puddling:' + str(PIm2GIm1P[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile)
+			print('Date:' + str(date0) + ', Predict Impact Puddling:' + str(PIm2GIm1P[str(date0)][-1]) + 'if random would be '+ str(impact_key_pertile))
 	for date0 in date0_list:
 		PIm2GIm1[str(date0)] = np.array(PIm2GIm1[str(date0)])
 		PIm2GIm1D[str(date0)] = np.array(PIm2GIm1D[str(date0)])
@@ -466,7 +529,7 @@ def get_example(Our_Docs, Page_Dist, Per_Small, Per_Large):
 def get_exmaple_regions(Page_Dist, Our_Docs, F,Per_Small, Per_Large0):
 	Cut = 3 
 	ind0 = np.round(np.random.uniform(0,len(F)))
-	print ind0
+	print(ind0)
 	tA = F.tran_mat_index1.tolist()[int(ind0)]
 	tB = F.tran_mat_index2.tolist()[int(ind0)]
 	TFA = (Page_Dist[tA,:]<Per_Small) & (Page_Dist[tB,:]>Per_Large0)
@@ -490,8 +553,8 @@ def get_exmaple_regions(Page_Dist, Our_Docs, F,Per_Small, Per_Large0):
 	Info = pd.concat([indApd,indBpd])
 	Info = join_replace(Info,Our_Docs[['usid_index','tran_mat_index','year','parties']],'tran_mat_index')
 	MN = np.min(np.array([np.sum(TFA),np.sum(TFB)]))
-	if MN<Cut: print "Too small" 
-	print Info.to_string()
+	if MN<Cut: print("Too small")
+	print(Info.to_string())
 	return Info
  
 def graphs_from_papers(fig_num, date0, Pick_Out, Drain_Pud_Info ):
@@ -517,7 +580,7 @@ def graphs_from_papers(fig_num, date0, Pick_Out, Drain_Pud_Info ):
 		ylabel("Increase")
 		return "done" 
 	def graph_imapct_as_determiend_by_effect(Pick_Out, date0_list, fig_num, date0, impact_key_pertile_list, PIm2GIm1, PIm2GIm1P, PIm2GIm1D):
-		print "Pertile we are using " + str(impact_key_pertile_list[Pick_Out])
+		print("Pertile we are using " + str(impact_key_pertile_list[Pick_Out]))
 		Im1=[]
 		Im1P=[]
 		Im1D=[]
@@ -659,191 +722,216 @@ def join_and_rename(name, Exmaple_Date, Our_Docs ):
 
 if __name__ =='__main__':
 
-	'''	
-source ~/.bashrc 
-workon InitialPyEnv
-ipython --pylab
-	'''
-	squid 
+    '''	
+    source ~/.bashrc 
+    workon InitialPyEnv
+    ipython --pylab
+    '''
+    squid 
 
-	t0=time.time()
+    t0=time.time()
 	# run Bending_The_Law2.py
-	print "our goal is to get the paper under data control and to make some real progress!"
+    print("our goal is to get the paper under data control and to make some real progress!")
 
-	t0=time.time() 
-[Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym] = load_data()
-	print (time.time()-t0)
+    t0=time.time() 
+    [Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym] = load_data()
+    print( (time.time()-t0))
+    Our_Docs['tran_mat_index'] = np.arange(0,len(Our_Docs),1)
+    [W_cited, T_cited, W_cited_by, T_cited_by] = create_cite_transition(Our_Docs,Our_Cites)
 
-	Our_Docs['tran_mat_index'] = np.arange(0,len(Our_Docs),1)
-
-	[W_cited, T_cited, W_cited_by, T_cited_by] = create_cite_transition(Our_Docs,Our_Cites)
-
-	print str(time.time()-t0) + " time to laod data and create cite matricies" 
-	#Create_Sim = True
-	Create_Sim = False
-	M_T = 10
-	M_C = 10
-	if Create_Sim:
-		t0=time.time()
+    print(str(time.time()-t0) + " time to laod data and create cite matricies" )
+    #Create_Sim = True
+    Create_Sim = False
+    M_T = 10
+    M_C = 10
+    if Create_Sim:
+        t0=time.time()
 		
-		T_sim = create_sim_matrix(M_T,M_C,Our_Docs,Our_theta)
-		print str(time.time()-t0) + " time for, M_T= " + str(M_T) + " , and M_C = " + str(M_C)
-		pickle.dump(T_sim,open(data_dir+ 'T_sim' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
-	else: 
-		T_sim=pickle.load(open(data_dir+ 'T_sim' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'rb'))
+        T_sim = create_sim_matrix(M_T,M_C,Our_Docs,Our_theta)
+        print(str(time.time()-t0) + " time for, M_T= " + str(M_T) + " , and M_C = " + str(M_C))
+        pickle.dump(T_sim,open(data_dir+ 'T_sim' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
+    else: 
+        T_sim=pickle.load(open(data_dir+ 'T_sim' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'rb'))
 
 	# might need some sort or restart, but maybe not since we are palying russioan roullette
-	r = 5/6.0
-	r_name = '5Over6'
+    r = 5/6.0
+    r_name = '5Over6'
 
-	r = 1/3.0
-	r_name = '1Over3'
+    r = 1/3.0
+    r_name = '1Over3'
 
-	r = 1/2.0
-	r_name = '1Over2'
-	L_p = 2
+    r = 1/2.0
+    r_name = '1Over2'
+    L_p = 2
 
 	#Create_Page_Dist = True
-	Create_Page_Dist = False
-	if Create_Page_Dist:
-		p_cited = 1/3.0
-		p_cited_by = 1/3.0
-		p_sim = 1/3.0
-		T_all = master_transition_matrix(T_cited,T_cited_by,T_sim,p_cited,p_cited_by,p_sim)
-		# r = 1/2.0
-		#R_norm   = acurate_resolvent(T_all,r)
-		[R_all, Curvature_all] = form_resolvent(T_all,r)
-		# Page_Dist_Original = compute_page_dist(R_norm) 
-		Page_Dist = compute_page_dist_one_step(R_all,L_p)
-		pickle.dump(T_all,open(data_dir+ 'T_all' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
-		pickle.dump(R_all,open(data_dir+ 'R_all' + '_' + str(M_T) + '_'  + str(M_C)+'_' + str(r_name) + '.p', 'wb'))
-		pickle.dump(Page_Dist, open(data_dir+ 'Page_Dist_1' + '_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + '.p', 'wb'))
-	else:
-		T_all = pickle.load(open(data_dir+ 'T_all' + '_' + str(M_T) + '_'  + str(M_C) + '.p', 'rb'))
+    Create_Page_Dist = False
+    if Create_Page_Dist:
+        
+        p_cited = 1/3.0
+        p_cited_by = 1/3.0
+        p_sim = 1/3.0
+        
+        #document links
+        t0 = time.time()
+        rows = []       
+        for row_ind in range(0,N):
+            row = Dist_mat[row_ind,:]
+            how_many = 30
+            top_N = np.argpartition(row, how_many)[:how_many]
+            top_N_sorted=top_N[np.argsort(row[top_N])]
+            rows.append(top_N_sorted)
+        dist_lookup=np.array(rows)
+        dist_dict = {key:dist_lookup[key,:].tolist() for key in range(0,dist_lookup.shape[0])}
+        pickle.dump(dist_dict, open(data_dir+'case_lookup.p','wb'))
+        np.savetxt(data_dir+'dist_lookup_111.txt', dist_lookup, fmt='%i', delimiter=' ')
+            
+        t1 = time.time() - t0
+        #titles
+        O=Our_Docs[['tran_mat_index','parties','year']].to_dict('records')
+        O_dict = {key:o for key,o in zip(range(0,len(O)),O)}
+        pickle.dump(O_dict, open(data_dir+'titles.p','wb'))
+
+        
+        for p_set in [[1,1,2],[1,2,2],[2,2,1],[2,1,2],[2,1,1],[2,2,1]]:
+             p_cited = p_set[0]/sum(p_set)
+             p_cited_by = p_set[1]/sum(p_set)
+             p_sim = p_set[2]/sum(p_set)
+             T_all = master_transition_matrix(T_cited,T_cited_by,T_sim,p_cited,p_cited_by,p_sim)
+             
+    		# r = 1/2.0
+    		#R_norm   = acurate_resolvent(T_all,r)
+             R_all= form_resolvent(T_all,r)
+    		# Page_Dist_Original = compute_page_dist(R_norm) 
+             Page_Dist = compute_page_dist_one_step(R_all,L_p)
+             #pickle.dump(T_all,open(data_dir+ 'T_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
+             #pickle.dump(R_all,open(data_dir+ 'R_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' +str(M_T) + '_'  + str(M_C)+'_' + str(r_name) + '.p', 'wb'))
+             pickle.dump(Page_Dist, open(data_dir+ 'Page_Dist_1' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + '.p', 'wb'))
+    else:
+        T_all = pickle.load(open(data_dir+ 'T_all' + '_' + str(M_T) + '_'  + str(M_C) + '.p', 'rb'))
 		# could get 
 		# R_all = pickle.load(open(data_dir+ 'R_all' + '_' + str(M_T) + '_'  + str(M_C) +'_' + str(r_name) + '.p', 'rb'))
-		Page_Dist = pickle.load(open(data_dir+ 'Page_Dist_1' + '_' + str(M_T) + '_'  + str(M_C) + '_'  + str(L_p)+'_' + str(r_name) + '.p', 'rb'))
-	fig_num0 = 1
-	hist_Page_Dist(fig_num0, Page_Dist)
+        Page_Dist = pickle.load(open(data_dir+ 'Page_Dist_1' + '_' + str(M_T) + '_'  + str(M_C) + '_'  + str(L_p)+'_' + str(r_name) + '.p', 'rb'))
+    fig_num0 = 1
+    hist_Page_Dist(fig_num0, Page_Dist)
 	# gathering exmaples to va;idate page dist 
-	V = Page_Dist[Page_Dist>0]
-	Per_Small = np.percentile(V,35)
-	Per_Large = np.percentile(V,80)
-	Per_Large0 = np.percentile(V,65)
-	Per_conn = np.percentile(Our_Docs.count_connections,30) 
-	F = get_example(Our_Docs, Page_Dist, Per_Small, Per_Large)
-	F = F[(F.total_close1>5) & (F.total_close2>5) & (F.count_connections2>Per_conn) & (F.count_connections2>Per_conn)]
-	Info  = get_exmaple_regions(Page_Dist, Our_Docs, F,Per_Small, Per_Large0)
-	
-	Create_Puddles = False
-	Create_Puddles = True
-	# original
-	run_id = ''
-	run_id = '(new1)'
-	if Create_Puddles:
-		Drain_Pud_Info = {}     
-		Drain_Pud_Info['M_T'] = M_T
-		Drain_Pud_Info['M_C'] = M_C
-		Drain_Pud_Info['L_p'] = L_p
-		Drain_Pud_Info['r_name'] = '1Over2'
-		Drain_Pud_Info['r'] = r
-		Drain_Pud_Info['impact_key_pertile_list'] = np.arange(5,105,5)
-		Drain_Pud_Info['bending_key_pertile'] = 30 
-		Drain_Pud_Info['date0_list'] = np.arange(1972,1993,1)
-		Drain_Pud_Info['Window']= 5
-		# takeslike 20 miniutes to run output in memepry
-		Drain_Pud_Info = puddles_drainage_over_time(Drain_Pud_Info, T_all, Page_Dist, Our_Docs )
-		pickle.dump(Drain_Pud_Info, open(data_dir+ 'Drain_Pud_Info' + '_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + run_id + '.p', 'wb'))
-	else:
-		Drain_Pud_Info = pickle.load(open(data_dir+ 'Drain_Pud_Info' + '_' + str(M_T) + '_'  + str(M_C) + '_'  + str(L_p)+'_' + str(r_name) + run_id + '.p', 'rb'))
+    V = Page_Dist[Page_Dist>0]
+    Per_Small = np.percentile(V,35)
+    Per_Large = np.percentile(V,80)
+    Per_Large0 = np.percentile(V,65)
+    Per_conn = np.percentile(Our_Docs.count_connections,30) 
+    F = get_example(Our_Docs, Page_Dist, Per_Small, Per_Large)
+    F = F[(F.total_close1>5) & (F.total_close2>5) & (F.count_connections2>Per_conn) & (F.count_connections2>Per_conn)]
+    Info  = get_exmaple_regions(Page_Dist, Our_Docs, F,Per_Small, Per_Large0)
+    
+    Create_Puddles = False
+    Create_Puddles = True
+    # original
+    run_id = ''
+    run_id = '(new1)'
+    if Create_Puddles:
+        Drain_Pud_Info = {}     
+        Drain_Pud_Info['M_T'] = M_T
+        Drain_Pud_Info['M_C'] = M_C
+        Drain_Pud_Info['L_p'] = L_p
+        Drain_Pud_Info['r_name'] = '1Over2'
+        Drain_Pud_Info['r'] = r
+        Drain_Pud_Info['impact_key_pertile_list'] = np.arange(5,105,5)
+        Drain_Pud_Info['bending_key_pertile'] = 30 
+        Drain_Pud_Info['date0_list'] = np.arange(1972,1993,1)
+        Drain_Pud_Info['Window']= 5
+        # takeslike 20 miniutes to run output in memepry
+        Drain_Pud_Info = puddles_drainage_over_time(Drain_Pud_Info, T_all, Page_Dist, Our_Docs )
+        pickle.dump(Drain_Pud_Info, open(data_dir+ 'Drain_Pud_Info' + '_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + run_id + '.p', 'wb'))
+    else:
+        Drain_Pud_Info = pickle.load(open(data_dir+ 'Drain_Pud_Info' + '_' + str(M_T) + '_'  + str(M_C) + '_'  + str(L_p)+'_' + str(r_name) + run_id + '.p', 'rb'))
 		# return [date0_list, impact_key_pertile_list, PIm2GIm1, PIm2GIm1P, PIm2GIm1D, bending, k_restricted]
-
-	fig_num0 = fig_num0 + 1
-	date0 = 1990
-	Pick_Out=3
-	graphs_from_papers(fig_num0, date0, Pick_Out, Drain_Pud_Info )
-	# There are two major goals
-	# 1. FInd High and low impact regions 
-	# 2. High and low drainage regions in amoung high impact 
-	impact_key_pertile = Drain_Pud_Info['impact_key_pertile_list'][Pick_Out]
-	Bending = bending_on_date(date0, Drain_Pud_Info, Our_Docs, T_all)
-
+    fig_num0 = fig_num0 + 1
+    date0 = 1990
+    Pick_Out=3
+    graphs_from_papers(fig_num0, date0, Pick_Out, Drain_Pud_Info )
+    # There are two major goals
+    # 1. FInd High and low impact regions 
+    # 2. High and low drainage regions in amoung high impact 
+    impact_key_pertile = Drain_Pud_Info['impact_key_pertile_list'][Pick_Out]
+    Bending = bending_on_date(date0, Drain_Pud_Info, Our_Docs, T_all)
+    
 	
-	Impact_Data = puddling_on_date_fixed_impact(impact_key_pertile, Drain_Pud_Info, Page_Dist, Bending)
-	# find high and low impact as function of date compare good region 
+    Impact_Data = puddling_on_date_fixed_impact(impact_key_pertile, Drain_Pud_Info, Page_Dist, Bending)
+     # find high and low impact as function of date compare good region 
 
-	fig_num0 = 20
-	fig_num0 = fig_num0 + 1
-	plot_date_differecne_high_low_impact(fig_num0, Impact_Data, Our_Docs)
+    fig_num0 = 20
+    fig_num0 = fig_num0 + 1
+    plot_date_differecne_high_low_impact(fig_num0, Impact_Data, Our_Docs)
 
 	# find year controlled 
 	# high impact low 
 	# low impact in same rangeg 
 	# find l
 
-	beg_date = 1980
-	end_date = 1985
-	TF_date = (Our_Docs.year>=beg_date)  &  (Our_Docs.year<=end_date)
-	OD_Low = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1_Low']))]
-	OD_High = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1']))]
-	[len(OD_Low),len(OD_High)]
+    beg_date = 1980
+    end_date = 1985
+    TF_date = (Our_Docs.year>=beg_date)  &  (Our_Docs.year<=end_date)
+    OD_Low = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1_Low']))]
+    OD_High = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1']))]
+    [len(OD_Low),len(OD_High)]
 
-	beg_date = 1960
-	end_date = 1965
-	TF_date = (Our_Docs.year>=beg_date)  &  (Our_Docs.year<=end_date)
-	OD_Low = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1_Low']))]
-	OD_High = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1']))]
-	[len(OD_Low),len(OD_High)]
-
-
-	# run Bending_The_Law2.py
-	n_then = [1960,1965] 
-	n_now = [date0+1,date0+ Window] 
-	High_Or_Low='Low'
-	Keep=100
-	Exmaple_Date = collect_interesting_date_ex(High_Or_Low, n_now, n_then, Our_Docs, Page_Dist, Keep)
-	Exmaple_Date = join_and_rename('_then', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_0', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_1', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_2', Exmaple_Date, Our_Docs )
-	N=0
-	Exmaple_Date[N:(N+10):1][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']]
-	Exmaple_Date[Exmaple_Date.index.isin([0,2,8])][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']] 
+    beg_date = 1960
+    end_date = 1965
+    TF_date = (Our_Docs.year>=beg_date)  &  (Our_Docs.year<=end_date)
+    OD_Low = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1_Low']))]
+    OD_High = Our_Docs[TF_date & (Our_Docs.tran_mat_index.isin(Impact_Data['Impact1']))]
+    [len(OD_Low),len(OD_High)]
 
 
-	n_then = [1960,1965] 
-	n_now = [date0+1,date0+ Window] 
-	High_Or_Low='High'
-	Keep=100
-	Exmaple_Date = collect_interesting_date_ex(High_Or_Low, n_now, n_then, Our_Docs, Page_Dist, Keep)
-	Exmaple_Date = join_and_rename('_then', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_0', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_1', Exmaple_Date, Our_Docs )
-	Exmaple_Date = join_and_rename('_now_2', Exmaple_Date, Our_Docs )
-	N=0
-	Exmaple_Date[N:(N+10):1][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']]
+    # run Bending_The_Law2.py
+    n_then = [1960,1965] 
+    n_now = [date0+1,date0+ Window] 
+    High_Or_Low='Low'
+    Keep=100    
+    Exmaple_Date = collect_interesting_date_ex(High_Or_Low, n_now, n_then, Our_Docs, Page_Dist, Keep)
+    Exmaple_Date = join_and_rename('_then', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_0', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_1', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_2', Exmaple_Date, Our_Docs )
+    N=0
+    Exmaple_Date[N:(N+10):1][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']]
+    Exmaple_Date[Exmaple_Date.index.isin([0,2,8])][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']] 
+
+
+    n_then = [1960,1965] 
+    n_now = [date0+1,date0+ Window] 
+    High_Or_Low='High'
+    Keep=100
+    Exmaple_Date = collect_interesting_date_ex(High_Or_Low, n_now, n_then, Our_Docs, Page_Dist, Keep)
+    Exmaple_Date = join_and_rename('_then', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_0', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_1', Exmaple_Date, Our_Docs )
+    Exmaple_Date = join_and_rename('_now_2', Exmaple_Date, Our_Docs )
+    N=0
+    Exmaple_Date[N:(N+10):1][['parties_then','year_then', 'parties_now_0','year_now_0','parties_now_1','year_now_1','parties_now_2','year_now_2']]
 
 	# last thing is High and low drainage regios 
 	# pobbaity:High impact Driaingage 
 	# Low Impact 
 
 
-	close(3)
-	figure(3)
-	A = Page_Dist[Tran_then,:]
-	A = A[:,Tran_now]
-	M = A.min(1)
-	hist(M,20)
+    close(3)
+    figure(3)
+    A = Page_Dist[Tran_then,:]
+    A = A[:,Tran_now]
+    M = A.min(1)
+    hist(M,20)
 
 
 
-	[100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['Impact1'])))/(1.0*len(Impact_Data['Impact1'])),		
-	100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1D'])))/(1.0*len(Impact_Data['I1D'])),
-	100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1P'])))/(1.0*len(Impact_Data['I1P']))]
+    [100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['Impact1'])))/(1.0*len(Impact_Data['Impact1'])),		
+     100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1D'])))/(1.0*len(Impact_Data['I1D'])),
+    100*len(set(Impact_Data['Impact2']).intersection(set(Impact_Data['I1P'])))/(1.0*len(Impact_Data['I1P']))]
 
-	[100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['Impact1'])))/(1.0*len(Impact_Data['Impact1'])),		
-	100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['I1D'])))/(1.0*len(Impact_Data['I1D'])),
-	100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['I1P'])))/(1.0*len(Impact_Data['I1P']))]
+    [100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['Impact1'])))/(1.0*len(Impact_Data['Impact1'])),		
+     100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['I1D'])))/(1.0*len(Impact_Data['I1D'])),
+    100*len(set(Impact_Data['Impact2_Low']).intersection(set(Impact_Data['I1P'])))/(1.0*len(Impact_Data['I1P']))]
 
 	# very few we LOW notice ingenral its VERY HIGH!!!!!!!!!
 	# what am I hoping for? 

@@ -375,7 +375,7 @@ def compute_page_dist_one_step(R_all,p):
 			Dist_mat = Dist_k.reshape([1,len(V)])
 		else:
 			Dist_mat = np.concatenate([Dist_mat,Dist_k.reshape([1,len(V)])])
-             t1=time.time() - t0
+             #t1=time.time() - t0
 		print(str(k) + " out of " + str(len(R_1)))
 		print("current size " + str(Dist_mat.shape) )
 	return Dist_mat
@@ -791,9 +791,15 @@ if __name__ =='__main__':
         O=Our_Docs[['tran_mat_index','parties','year']].to_dict('records')
         O_dict = {key:o for key,o in zip(range(0,len(O)),O)}
         pickle.dump(O_dict, open(data_dir+'titles.p','wb'))
-
+        titleskey = {record['parties']:key for key, record in O_dict.items()}
+        pickle.dump(titleskey, open(data_dir+'titleskey.p','wb'))
         
-        for p_set in [[1,1,2],[1,2,2],[2,2,1],[2,1,2],[2,1,1],[2,2,1]]:
+        Our_Docs['count_contains'] = Our_Docs['count_contains'].replace(nan,0)
+        Our_Docs['count_citations'] = Our_Docs['count_citations'].replace(nan,0)
+        K= Our_Docs[['tran_mat_index','parties','year','count_contains','count_citations']].to_dict('records')
+        K_dict = {record['parties']:record for record in K}
+        pickle.dump(K_dict, open(data_dir+'metadata.p','wb'))
+        for p_set in [[1,2,1]]:#[[1,1,2],[1,2,2],[2,2,1],[2,1,2],[2,1,1]]:
              p_cited = p_set[0]/sum(p_set)
              p_cited_by = p_set[1]/sum(p_set)
              p_sim = p_set[2]/sum(p_set)

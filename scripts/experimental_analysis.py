@@ -103,4 +103,15 @@ for combo in combos:
 for target in targets:
     df_dict[target].to_csv(data_dir + 'target_' + target +'.csv')
     
-            
+#load data frames, perform overlap analysis (count of cases less than 20)
+    
+for target in targets:
+     df = pd.read_csv(data_dir + 'target_' + target +'.csv')
+     shared_df = df.copy()
+     shared_df.iloc[:,3:] = df.iloc[:,3:].applymap(lambda x: 1 if x<=20 else 0)
+     shared_df.iloc[:,3:] = shared_df.apply(lambda x: x.iloc[3:]*x['found_count'],1)       
+     out_df=df.append(pd.Series([np.nan, np.nan, 'Shared with cutoff 20'] + shared_df.iloc[:,3:].apply(sum,0).tolist(), index = [col for col in df.columns]), ignore_index=True )
+     shared_df = df.copy()
+     shared_df.iloc[:,3:] = df.iloc[:,3:].applymap(lambda x: 1 if x<=30 else 0)
+     shared_df.iloc[:,3:] = shared_df.apply(lambda x: x.iloc[3:]*x['found_count'],1)       
+     out_df=df.append(pd.Series([np.nan, np.nan, 'Shared with cutoff 30'] + shared_df.iloc[:,3:].apply(sum,0).tolist(), index = [col for col in df.columns]), ignore_index=True )

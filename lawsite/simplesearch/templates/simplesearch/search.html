@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Bending the Law: Search</title>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.9.0/vis.min.js"></script>
+	
+	<style>	
+	td { 
+		align: center;
+		visibility: hidden;
+	}
+	th { 
+		visibility: hidden;
+	}
+	
+	#metatable {
+		border-spacing: 10px 0px;
+	}
+	#leftcase {
+		float: left;
+		width:50%;
+		overflow:hidden;
+		}
+	#rightcase {
+		float: left;
+		width:50%;
+		overflow:hidden;
+		}
+	
+	#leftfind {
+		display:inline-block;
+				
+		}
+	#querybutton {
+		display: inline;
+				
+		}
+	#mds2d_button {
+		display: inline;
+				
+		}
+	#leftselect {		
+		width:574px;
+		height:574px;
+		}
+	#rightselect {		
+		width:574px;
+		height:574px;
+		}
+	#inputlabel {
+    font: normal 12px courier !important;
+	}
+	
+	#caseinput {
+    font: normal 12px courier !important;
+	width: 300px;
+	}
+	
+	#jquiwid {
+	display:inline-block;
+	}
+	
+	#networkdiv {
+      width: 500px;
+      height: 500px;
+      border: 1px solid lightgray;
+    }
+	
+	.tab_outer { display:table;  border-spacing: 10px; }
+	.tab_inner { display:table-row;}
+	.tab_cell { display:table-cell;}
+	</style>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.9.0/vis.min.css">
+  </head>
+
+  <body>
+  
+  
+  
+  <div id="finddiv">	
+		<div id="leftfind">
+		  <div id="jquiwid" class="ui-widget">
+				<label id="inputlabel" for="caseinput">Input Case: </label>
+				<input id="caseinput">
+		  </div>
+		</div>	
+		<button id="querybutton" type="button">Find Related Cases</button>		
+	<div class='tab_outer'>
+		<div class='tab_inner'>
+			
+			<div class='tab_cell'>
+				<label>Citation Weight</label>
+				<br>
+				<select name="TCit" id="TCit">					
+					<option>0</option>
+					<option>1</option>	
+					<option>2</option>						
+				</select>
+			</div>
+			<div class='tab_cell'>
+				<label>Cited By Weight</label>
+				<br>
+				<select name="TCitby" id="TCitby">			
+					<option>0</option>
+					<option>1</option>	
+					<option>2</option>						
+				</select>
+			</div>
+			<div class='tab_cell'>
+				<label>Text Similarity Weight</label>
+				<br>
+				<select name="Tsim" id="TSim">			
+					<option>0</option>
+					<option>1</option>	
+					<option>2</option>		
+				</select>
+			</div>
+			
+		</div>
+	</div>
+	
+  </div>
+  <br>
+  <table id="metatable" >
+ 
+	  <tr>
+		<th id="th_year" >Year:</th>
+		<th id="th_contains">Citations:</th>		
+		<th id="th_cits">Cited By:</th>
+		<th id="th_mds2D"></th>
+		<!--<th id="th_link"></th>-->
+	  </tr>
+
+	  <tr>
+		<td id="tab_year">NA</td>
+		<td id="tab_contains">NA</td>		
+		<td id="tab_cits">NA</td>
+		<td id="tab_mds2d"><button id="mds2d_button" type="button">View Case Network</button>	</td>
+		<!--<td id="tab_link">NA</td>-->
+		</tr>
+	</table>
+
+	<br>
+	<div id="networkdiv"></div>
+  <br>
+  <div id="casediv">
+  
+	  <div id="leftcase">
+		  <label>Browse Cases:</label><br>
+		  <select name="leftselect" id="leftselect" size="30">
+			{% for case in cases %}
+			  <option>{{case}}</option>
+			{% endfor %}
+		  </select> 
+	  </div>
+	  
+	  <div id="rightcase">
+		 <label>Similar Cases (in order of similarity):</label><br>
+		  <select name="rightselect" id="rightselect" size="30">
+			<option></option>
+		  </select> 
+	  </div>
+	  
+  </div>
+  
+  <div>
+  
+  </div>
+    <script>
+	$("#networkdiv").hide();
+	//csrf config for ajax
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+var csrftoken = getCookie('csrftoken');
+
+function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+function sameOrigin(url) {
+    // test that a given url is a same-origin URL
+    // url could be relative or scheme relative or absolute
+    var host = document.location.host; // host + port
+    var protocol = document.location.protocol;
+    var sr_origin = '//' + host;
+    var origin = protocol + sr_origin;
+    // Allow absolute or scheme relative URLs to same origin
+    return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+        (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+        // or any other URL that isn't scheme relative or absolute i.e relative.
+        !(/^(\/\/|http:|https:).*/.test(url));
+}
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && sameOrigin(settings.url)) {
+            // Send the token to same-origin, relative URLs only.
+            // Send the token only if the method warrants CSRF protection
+            // Using the CSRFToken value acquired earlier
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+    }
+});
+
+
+
+  $(function() {
+    var availableCases = [
+		{% for case in cases %}
+			"{{case}}",
+		{% endfor %}
+		
+    ];
+    $( "#caseinput" ).autocomplete({
+      source: availableCases
+    });
+  });
+  
+  $("#caseinput").keyup(function(event){
+    if(event.keyCode == 13){
+        $("#querybutton").click();
+    }
+	});
+	
+	$('#leftselect').change(function(){ 	 		
+        $("#caseinput").val($('#leftselect option:selected').text());    
+	});
+	$('#rightselect').change(function(){ 	 
+        $("#caseinput").val($('#rightselect option:selected').text());    
+	});
+	
+	$('#querybutton').click(function(e) {
+		//
+		var querycase = $("#caseinput").val();
+		var tcit = $("#TCit").val()
+		var tcitby = $("#TCitby").val()
+		var tsim = $("#TSim").val()		
+		if (tcit == '0' && tcitby =='0' && tsim =='0') {
+			alert('Please enter a non-zero weight') }
+		else {
+		
+			$.ajax({      
+			  url: "?",
+			  type: "POST",
+			  data : {'posttype':'query','querycase': querycase,'tcit':tcit,'tcitby':tcitby,'tsim':tsim},       
+			  success: function(payload) {
+				  var items =payload['caselist']	
+				  var year = payload['year']
+				  var contains = payload['count_contains']
+				  var cits = payload['count_citations']
+				  var usid = payload['usid_index']
+				  $('th').css("visibility","visible")			 
+				  $("#networkdiv").empty();				  
+				  $('#tab_year').text(year)
+				  $('#tab_contains').text(contains)
+				  $('#tab_cits').text(cits)
+				  <!--			  $('#tab_link').html('<a target="_blank" href="/search/' + usid + '/">View Case Text<a>')
+				  -->
+				  $('td').css("visibility","visible")
+				  $('#rightselect').find('option').remove();			  
+				  $.each(items, function(i, item) {
+					  $('#rightselect').append($('<option>', { 						
+							text : item,						
+						})); 				 
+					});
+				}
+			});
+			}
+	});
+	
+	$('#mds2d_button').click(function(e) {
+		//
+		var querycase = $("#caseinput").val();
+		var tcit = $("#TCit").val()
+		var tcitby = $("#TCitby").val()
+		var tsim = $("#TSim").val()		
+		if (tcit == '0' && tcitby =='0' && tsim =='0') {
+			alert('Please enter a non-zero weight') }
+		else {
+			var button_name = $("#mds2d_button").text();
+			if (button_name == "View Case Network") {
+				$("#mds2d_button").text("Hide Case Network") 
+				$("#networkdiv").toggle();
+				$("#networkdiv").text("loading...") 
+				$.ajax({      
+				url: "?",
+					type: "POST",
+				data : {'posttype':'mds2d','querycase': querycase,'tcit':tcit,'tcitby':tcitby,'tsim':tsim},       
+				success: function(payload) {
+				$("#networkdiv").text("") 
+				  var nodes =payload['nodes']	
+				  var edges = payload['edges']			 
+			  
+			  
+				
+					$("#mds2d_button").text("Hide Case Network") 
+					var network;
+
+				  function redrawAll() {
+					var container = document.getElementById('networkdiv');
+					var options = {
+					  nodes: {
+					
+						shape: 'dot',
+						font: {
+						  size: 12,
+						  face: 'Tahoma'
+						}
+					  },
+					  edges: {
+						arrows: 'to',
+						color:{inherit:true},
+						width: 0.15,
+						smooth: {
+						  type: 'continuous'
+						}
+					  },
+					  interaction: {
+						hideEdgesOnDrag: false,
+						tooltipDelay: 200
+					  },
+					  
+					 
+					  physics: false
+					};
+
+					var data = {nodes:nodes, edges:edges};
+					
+					network = new vis.Network(container, data, options);
+					
+				  }
+
+				  redrawAll()
+
+				}
+			});
+			}
+			else {
+				$("#mds2d_button").text("View Case Network")
+				$("#networkdiv").empty();
+				$("#networkdiv").toggle();
+			}        
+			
+		
+			
+				
+				
+			
+
+				 
+
+				
+			}
+		});
+	
+  </script>
+  </body>
+  
+  
+</html>

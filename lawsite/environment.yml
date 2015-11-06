@@ -1,0 +1,7 @@
+name: lawsite
+dependencies: 
+ - numpy
+ - scipy
+ - scikit-learn
+ - boto
+  

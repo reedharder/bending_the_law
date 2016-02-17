@@ -262,7 +262,7 @@ function handleSelect(elm)
   $(function() {
     var availableCases = [
 		{% for case in cases %}
-			"{{case}}",
+			"{{case}}".replace("&#39;","'").replace('&amp;','&'),
 		{% endfor %}
 		
     ];

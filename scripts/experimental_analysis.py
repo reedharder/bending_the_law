@@ -114,4 +114,5 @@ for target in targets:
      shared_df = df.copy()
      shared_df.iloc[:,3:] = df.iloc[:,3:].applymap(lambda x: 1 if x<=30 else 0)
      shared_df.iloc[:,3:] = shared_df.apply(lambda x: x.iloc[3:]*x['found_count'],1)       
-     out_df=df.append(pd.Series([np.nan, np.nan, 'Shared with cutoff 30'] + shared_df.iloc[:,3:].apply(sum,0).tolist(), index = [col for col in df.columns]), ignore_index=True )
+     out_df=out_df.append(pd.Series([np.nan, np.nan, 'Shared with cutoff 30'] + shared_df.iloc[:,3:].apply(sum,0).tolist(), index = [col for col in df.columns]), ignore_index=True )
+     out_df.to_csv(data_dir + 'target_' + target + 'sharedcount' +'.csv')

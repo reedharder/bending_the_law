@@ -297,7 +297,11 @@ K_dict = {record['usid_title']:record for record in K}
 pickle.dump(K_dict, open(data_dir+'metadata2.p','wb'),2)
 
 
-
+#remove titles from metadata and titles key files
+meta2 = {key.split(':')[0]:value for key, value in metadata.items()}
+tk = {key.split(':')[0]:value for key, value in titleskey.items()}
+pickle.dump(meta2, open(data_dir+ 'metadata_2.p','wb'),2)
+pickle.dump(tk, open(data_dir +'titleskey_2.p','wb'),2)
 
 
 

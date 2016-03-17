@@ -11,6 +11,8 @@ import time
 import itertools
 import pickle
 from sklearn.manifold import MDS
+import os
+os.chdir("O:/documents/bendinglaw/src/bending_the_law/scripts/")
 from bendinglaw import *
 
 '''
@@ -43,16 +45,16 @@ Our_Docs['tran_mat_index'] = np.arange(0,len(Our_Docs),1)
 Our_Docs['usid_title'] = Our_Docs.apply(lambda x: str(x['usid_index']).replace('_',' ') + ': ' + str(x['parties']),1)
 O=Our_Docs[['tran_mat_index','parties','year','usid_index','usid_title']].to_dict('records')
 O_dict = {key:o for key,o in zip(range(0,len(O)),O)}
-pickle.dump(O_dict, open(data_dir+'titles2.p','wb'),2)
+pickle.dump(O_dict, open(data_dir+'titles2_rev.p','wb'),2)
 titleskey = {record['usid_title']:key for key, record in O_dict.items()}
-pickle.dump(titleskey, open(data_dir+'titleskey2.p','wb'),2)
+pickle.dump(titleskey, open(data_dir+'titleskey2_rev.p','wb'),2)
 
-Our_Docs['count_contains'] = Our_Docs['count_contains'].replace(nan,0)
-Our_Docs['count_citations'] = Our_Docs['count_citations'].replace(nan,0)
+Our_Docs['count_contains'] = Our_Docs['count_contains'].replace(np.nan,0)
+Our_Docs['count_citations'] = Our_Docs['count_citations'].replace(np.nan,0)
 K= Our_Docs[['tran_mat_index','parties','year','count_contains','count_citations','usid_index','usid_title']].to_dict('records')
 
 K_dict = {record['usid_title']:record for record in K}
-pickle.dump(K_dict, open(data_dir+'metadata2.p','wb'),2)
+pickle.dump(K_dict, open(data_dir+'metadata2_rev.p','wb'),2)
 
 
 
@@ -64,9 +66,9 @@ if Create_Sim:
     t0=time.time()		
     T_sim = create_sim_matrix(M_T,M_C,Our_Docs,Our_theta)
     print(str(time.time()-t0) + " time for, M_T= " + str(M_T) + " , and M_C = " + str(M_C))
-    pickle.dump(T_sim,open(data_dir+ 'T_sim2' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
+    pickle.dump(T_sim,open(data_dir+ 'T_sim2_rev' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
 else: 
-    T_sim=pickle.load(open(data_dir+ 'T_sim2' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'rb'))
+    T_sim=pickle.load(open(data_dir+ 'T_sim2_rev' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'rb'))
 
 # set r value	
 r = 5/6.0
@@ -103,7 +105,7 @@ for p_set in combos:
      Page_Dist = compute_page_dist_one_step(R_all,L_p)
      #pickle.dump(T_all,open(data_dir+ 'T_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
      #pickle.dump(R_all,open(data_dir+ 'R_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' +str(M_T) + '_'  + str(M_C)+'_' + str(r_name) + '.p', 'wb'))
-     pickle.dump(Page_Dist, open(data_dir+ 'Page_Dist2_1' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + '.p', 'wb'))
+     pickle.dump(Page_Dist, open(data_dir+ 'Page_Dist2_rev_1' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + '.p', 'wb'))
 
     
 
@@ -111,11 +113,11 @@ for p_set in combos:
 #create lookup dictionaries, storing simliar cases and scores thereof for each case in order of similarity 
 for combo in combos:
     print((combo[0],combo[1],combo[2]))
-    infile = 'Page_Dist_1_%s_%s_%s_10_10_2_1Over2.p' % (combo[0],combo[1],combo[2])
+    infile = 'Page_Dist2_rev_1_%s_%s_%s_10_10_2_1Over2.p' % (combo[0],combo[1],combo[2])
     Dist_mat = pickle.load(open(data_dir + infile,'rb'))
     N=Dist_mat.shape[0]
-    outfile_titles = 'case_lookup_%s%s%s.p'% (combo[0],combo[1],combo[2])
-    outfile_scores = 'case_lookup_scores_%s%s%s.p'% (combo[0],combo[1],combo[2])
+    outfile_titles = 'case_lookup_rev_%s%s%s.p'% (combo[0],combo[1],combo[2])
+    outfile_scores = 'case_lookup_rev_scores_%s%s%s.p'% (combo[0],combo[1],combo[2])
     rows = []   
     scores = []
     for row_ind in range(0,N):
@@ -304,4 +306,37 @@ pickle.dump(meta2, open(data_dir+ 'metadata_2.p','wb'),2)
 pickle.dump(tk, open(data_dir +'titleskey_2.p','wb'),2)
 
 
+
+#####
+
+
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 16 17:50:40 2016
+
+@author: d29905p
+"""
+import os
+import numpy as np
+os.chdir("O:/Documents/bendinglaw/src/bending_the_law/lawsite_nogit")
+rcd = np.load('row_col_dist_int_010.npy')
+import pickle
+cl=pickle.load(open('case_lookup_010.p', 'rb'))
+cl=pickle.load(open('case_lookup_010.p', 'rb'))
+
+combos = [[1,1,1]]    
+for i in range(0,3):
+    for j in range(0,3):
+        for k in range(0,3):
+            if not(i==j and j==k):
+                combos.append([i,j,k])
+                
+redundancy_dict = {}
+already_represented = []
+for combo in combos:
+    if [c/2 for c in combo] in already_represented:
+        redundancy_dict[tuple(combo)]= [c/2 for c in combo]
+    else:
+        redundancy_dict[tuple(combo)] = combo
+        already_represented.append(combo)
 

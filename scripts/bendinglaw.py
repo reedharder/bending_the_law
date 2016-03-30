@@ -20,8 +20,9 @@ def normalize(A,N):
 	"""
 	This is a simple normalizer... that leaves zero uneffected
 	"""
-     
+      # sum across all rows of matrix
 	RowSum=np.dot(A,np.ones([N,1]))	
+      
 	V=RowSum.reshape([np.size(RowSum),])
 	W=1/V
 	W[V<=0]=0
@@ -317,7 +318,8 @@ def create_sim_matrix(M_T,M_C,Our_Docs,Our_theta):
 
 def master_transition_matrix(T_cited,T_cited_by,T_sim,p_cited,p_cited_by,p_sim):
 	T =  p_sim*T_sim + p_cited*T_cited + p_cited_by*T_cited_by
-	np.sum(T,1)
+	#np.sum(T,1)
+      #set diagnol to zero
 	Ind = np.arange(0,len(T),1)
 	T[Ind,Ind] = 0*Ind 
 	N= len(T)
@@ -375,9 +377,8 @@ def compute_page_dist_one_step(R_all,p):
 	for k in range(0,N):#np.arange(0,len(R_1),1):
 		t0=time.time()
 		V = R_1[k,:]
-		#np.sum(V) 
 		Tile_V = np.tile(V.reshape([1,N]),[N,1])
-		#Tile_V.shape 
+		#each row is R_i - R_k
 		Dist_k = (np.sum(abs(R_1 - Tile_V)**p,1))**(1/(1.0*p))
 		if k == 0:
 			Dist_mat = Dist_k.reshape([1,len(V)])
@@ -387,7 +388,31 @@ def compute_page_dist_one_step(R_all,p):
 		print(str(k) + " out of " + str(len(R_1)))
 		print("current size " + str(Dist_mat.shape) )
 	return Dist_mat
+
+def compute_page_dist_one_step_preallocate(R_all,p): 
+	# take as step distribution  avoid crazy impact of point
+    N=len(R_all) 
+    R_1 =  R_all-np.eye(N)
+    Distmat = np.zeros([N,N])
+    for k in range(0,N):#np.arange(0,len(R_1),1):
+        t0=time.time()
+        V = R_1[k,:]
+        Tile_V = np.tile(V.reshape([1,N]),[N,1])
+        #each row is R_i - R_k
+        Dist_k = (np.sum(abs(R_1 - Tile_V)**p,1))**(1/(1.0*p))
+        t1=time.time() -t0
+        Distmat[k,:] = Dist_k
+        
+        print(str(k) + " out of " + str(len(R_1)))
+        print("current size " + str(Dist_mat.shape) )
+    return Dist_mat
  
+def compute_page_dist_fast(R_all,p):
+    # take as step distribution  avoid crazy impact of point
+    N=len(R_all) 
+    R_1 =  R_all-np.eye(N)
+    
+     
 def compute_page_dist_one_step_l2(R_all): 
 	# take as step distribution  avoid crazy impact of point
     t0=time.time()
@@ -725,3 +750,12 @@ def join_and_rename(name, Exmaple_Date, Our_Docs ):
 	Example_Date = Exmaple_Date.join(Our_Docs[['tran_mat_index','year','parties','caseid','usid_nice']].set_index('tran_mat_index'), on = ('tran'+name))
 	Example_Date = Exmaple_Date.rename(columns={'year':('year'+name),'parties':('parties'+name),'caseid':('caseid'+name),'usid_nice':('usid_nice'+name)})
 	return Example_Date
+ 
+ 
+ 
+ 
+ '''
+ Rtest = np.zeros([N,N])
+ for i in range(0,10):
+     Rtest = Rtest + (.5**i)*T**i
+     '''

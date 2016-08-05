@@ -15,6 +15,8 @@ import time
 import pickle
 from bendlinglaw import *
 
+
+# load citation and LDA data
 [Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym] = load_data()
 Our_Docs['tran_mat_index'] = np.arange(0,len(Our_Docs),1)
 [W_cited, T_cited, W_cited_by, T_cited_by] = create_cite_transition(Our_Docs,Our_Cites)

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 data_dir='C:/users/d29905p/documents/bendinglaw/'
 
-
+#load student data
 student_data = pd.read_csv(data_dir +'student_data1.csv' )
 titleskey=pickle.load(open(data_dir+'titleskey2.p','rb'))
 titles=pickle.load(open(data_dir+'titles2.p','rb'))        

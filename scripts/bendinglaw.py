@@ -389,18 +389,21 @@ def compute_page_dist_one_step(R_all,p):
 		print("current size " + str(Dist_mat.shape) )
 	return Dist_mat
 
-def compute_page_dist_one_step_preallocate(R_all,p): 
+def compute_page_dist_one_step_preallocate_l2(R_all,p): 
 	# take as step distribution  avoid crazy impact of point
     N=len(R_all) 
     R_1 =  R_all-np.eye(N)
     Distmat = np.zeros([N,N])
     for k in range(0,N):#np.arange(0,len(R_1),1):
-        t0=time.time()
+        
         V = R_1[k,:]
         Tile_V = np.tile(V.reshape([1,N]),[N,1])
-        #each row is R_i - R_k
-        Dist_k = (np.sum(abs(R_1 - Tile_V)**p,1))**(1/(1.0*p))
         t1=time.time() -t0
+        #each row is R_i - R_k
+        t0=time.time()
+        Dist_k = (np.sum((R_1 - Tile_V)**p,1))**(1/(1.0*p))
+        t1=time.time() -t0
+        
         Distmat[k,:] = Dist_k
         
         print(str(k) + " out of " + str(len(R_1)))
@@ -415,16 +418,18 @@ def compute_page_dist_fast(R_all,p):
      
 def compute_page_dist_one_step_l2(R_all): 
 	# take as step distribution  avoid crazy impact of point
-    t0=time.time()
+   
     N=len(R_all) 
     R_1 =  R_all-np.eye(N)
     Dist_mat = np.zeros([N,N])
     for k in range(0,N):#np.arange(0,len(R_1),1):
-        Tile_V = np.tile(R_1[k,:],[N,1])          
-        t1=time.time() - t0
+        t0=time.time()
+        Tile_V = np.tile(R_1[k,:],[N,1])    
+       
         Dist_mat[k,:] = np.linalg.norm(R_1 - Tile_V,2,1)
+        t1=time.time() - t0
         print(k)
-    t1=time.time() - t0
+    
     return Dist_mat
 
 
@@ -753,9 +758,3 @@ def join_and_rename(name, Exmaple_Date, Our_Docs ):
  
  
  
- 
- '''
- Rtest = np.zeros([N,N])
- for i in range(0,10):
-     Rtest = Rtest + (.5**i)*T**i
-     '''

@@ -23,17 +23,8 @@ script to create files necessary for Markov chains, PageDist and metadata for an
 
 data_dir='C:/users/d29905p/documents/bendinglaw/'
 
-#load data
+#load citation and LDA data
 [Our_Docs, Our_theta, phi, Our_Cites,  Our_Cites_Sym] = load_data()
-
-#writecase
-def casefile2html():
-    files = Our_Docs.usid_nice.tolist()
-    for file in files:
-        with open('C:/Users/Reed/Desktop/rockmore15x/Initial_Data_For_Reed/original_citations_from_folder1t8/%s' % file) as infile, open('C:/Users/Reed/Desktop/rockmore15x/Initial_Data_For_Reed/html_cases/%s' % file.replace('.txt','.html'),'w') as outfile:
-            filetext = infile.read()
-            filetext=filetext.replace('\n','</br>')
-            outfile.write(filetext)
 
 
 #create citation transition matrices
@@ -41,18 +32,18 @@ Our_Docs['tran_mat_index'] = np.arange(0,len(Our_Docs),1)
 [W_cited, T_cited, W_cited_by, T_cited_by] = create_cite_transition(Our_Docs,Our_Cites)
 
 
-#create titles, titleskey, and metadata files
+#create titles dictionary (case to transition matrix index)
 Our_Docs['usid_title'] = Our_Docs.apply(lambda x: str(x['usid_index']).replace('_',' ') + ': ' + str(x['parties']),1)
 O=Our_Docs[['tran_mat_index','parties','year','usid_index','usid_title']].to_dict('records')
 O_dict = {key:o for key,o in zip(range(0,len(O)),O)}
 pickle.dump(O_dict, open(data_dir+'titles2_rev.p','wb'),2)
+#create titleskey dictionary (transition matrix index to metadata dirctionary )
 titleskey = {record['usid_title']:key for key, record in O_dict.items()}
 pickle.dump(titleskey, open(data_dir+'titleskey2_rev.p','wb'),2)
-
+#create metadata dictionary (case title to metadata)
 Our_Docs['count_contains'] = Our_Docs['count_contains'].replace(np.nan,0)
 Our_Docs['count_citations'] = Our_Docs['count_citations'].replace(np.nan,0)
 K= Our_Docs[['tran_mat_index','parties','year','count_contains','count_citations','usid_index','usid_title']].to_dict('records')
-
 K_dict = {record['usid_title']:record for record in K}
 pickle.dump(K_dict, open(data_dir+'metadata2_rev.p','wb'),2)
 
@@ -70,18 +61,13 @@ if Create_Sim:
 else: 
     T_sim=pickle.load(open(data_dir+ 'T_sim2_rev' + '_' + str(M_T) + '_'  + str(M_C)  + '.p', 'rb'))
 
-# set r value	
-r = 5/6.0
-r_name = '5Over6'
-
-r = 1/3.0
-r_name = '1Over3'
+# set r value (see paper)	
 
 r = 1/2.0
 r_name = '1Over2'
 L_p = 2
 
-#create weighting combinations
+#enumerate weighting combinations
 combos = [[1,1,1]]    
 for i in range(0,3):
     for j in range(0,3):
@@ -91,51 +77,61 @@ for i in range(0,3):
                 
             
                 
-#create PageDistMatrices
+#create PageDistMatrices (will take a long time, ~hour per weighting)
 for p_set in combos:
      p_cited = p_set[0]/sum(p_set)
      p_cited_by = p_set[1]/sum(p_set)
      p_sim = p_set[2]/sum(p_set)
      T_all = master_transition_matrix(T_cited,T_cited_by,T_sim,p_cited,p_cited_by,p_sim)
      
-		# r = 1/2.0
-		#R_norm   = acurate_resolvent(T_all,r)
+		## r = 1/2.0
+		##R_norm   = acurate_resolvent(T_all,r)
      R_all= form_resolvent(T_all,r)
-		# Page_Dist_Original = compute_page_dist(R_norm) 
+		## Page_Dist_Original = compute_page_dist(R_norm) 
      Page_Dist = compute_page_dist_one_step(R_all,L_p)
-     #pickle.dump(T_all,open(data_dir+ 'T_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
-     #pickle.dump(R_all,open(data_dir+ 'R_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' +str(M_T) + '_'  + str(M_C)+'_' + str(r_name) + '.p', 'wb'))
+     ##pickle.dump(T_all,open(data_dir+ 'T_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)  + '.p', 'wb'))
+     ##pickle.dump(R_all,open(data_dir+ 'R_all' + '_' + '_'.join([str(p) for p in p_set]) +'_' +str(M_T) + '_'  + str(M_C)+'_' + str(r_name) + '.p', 'wb'))
      pickle.dump(Page_Dist, open(data_dir+ 'Page_Dist2_rev_1' + '_' + '_'.join([str(p) for p in p_set]) +'_' + str(M_T) + '_'  + str(M_C)+ '_'  + str(L_p) +'_' + str(r_name) + '.p', 'wb'))
 
     
 
 
-#create lookup dictionaries, storing simliar cases and scores thereof for each case in order of similarity 
+#create lookup dictionaries for top 30 most similar cases, storing simliar cases and scores thereof for each case in order of similarity 
 for combo in combos:
     print((combo[0],combo[1],combo[2]))
+    #get page dist matrix
     infile = 'Page_Dist2_rev_1_%s_%s_%s_10_10_2_1Over2.p' % (combo[0],combo[1],combo[2])
     Dist_mat = pickle.load(open(data_dir + infile,'rb'))
     N=Dist_mat.shape[0]
+    #file names for output titles and scores
     outfile_titles = 'case_lookup_rev_%s%s%s.p'% (combo[0],combo[1],combo[2])
     outfile_scores = 'case_lookup_rev_scores_%s%s%s.p'% (combo[0],combo[1],combo[2])
+    
     rows = []   
     scores = []
+    #for each case...
     for row_ind in range(0,N):
+        #get associated case row.
         row = Dist_mat[row_ind,:]
+        #get 30 cases with minimum page distance
         how_many = 30
         top_N = np.argpartition(row, how_many)[:how_many]
         top_N_sorted=top_N[np.argsort(row[top_N])]
+        #append indices of these cases
         rows.append(top_N_sorted)
+        #append scores of these cases
         scores.append(row[top_N_sorted])
+    # convert to numpy arrays  
     dist_lookup=np.array(rows)
     score_lookup = np.array(scores)
+    #dictionaries for linking case index to case indices and respective scores of top 30 most similar cases
     dist_dict = {key:dist_lookup[key,:].tolist() for key in range(0,dist_lookup.shape[0])}
     dist_dict_scores = {key:score_lookup[key,:].tolist() for key in range(0,dist_lookup.shape[0])}
     ##pickle.dump(dist_dict, open(data_dir+'case_lookup.p','wb'))
     pickle.dump(dist_dict, open(data_dir+outfile_titles,'wb'),2)
     pickle.dump(dist_dict_scores, open(data_dir+outfile_scores,'wb'),2)
-##np.savetxt(data_dir+'dist_lookup_111.txt', dist_lookup, fmt='%i', delimiter=' ')
-#get distance pairs that will be necessary to store PageDist for MDS
+
+
 
 #get case all case pairs relevant for a certain rating and store their similarity scores
 #revise in several different formats for efficient storage
@@ -148,7 +144,7 @@ for combo in combos:
     dist_dict = pickle.load(open(data_dir + infile_titles,'rb'))
     full_dist_pairs=set()
     t0=time.time()
-    for row_ind in range(0,N):        
+    for row_ind in range(0,N):       
             
         full_dist_pairs = full_dist_pairs | set(itertools.combinations(dist_dict[row_ind],2))
     t1=time.time()-t0
@@ -189,13 +185,15 @@ for combo in combos:
     else:
         print('ERROR')
         print(combo)
+'''
 #save above as text  
 for combo in combos:
     print(combo)
     npy=np.load(data_dir+'row_col_dist_int_%s%s%s.npy'% (combo[0],combo[1],combo[2]))
     np.savetxt(data_dir +'row_col_dist_int_%s%s%s.txt' % (combo[0],combo[1],combo[2]),npy,fmt='%i')
+'''
 
-#transform citations to trans_mat indice, save citation data as a text file
+#transform citations to trans_mat index, save citation data as a text file
 docs_id_indexed = Our_Docs.set_index('caseid')
 docs_id_indexed['trans_index'] = list(range(0,docs_id_indexed.shape[0]))
 def get_transdex(cell):
